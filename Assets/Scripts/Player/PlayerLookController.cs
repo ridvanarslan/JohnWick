@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Player
 {
-    public class PlayerLookController : MonoBehaviour
+    public class PlayerLookController : MonoBehaviour //kameraya
     {
         [SerializeField] private float mouseSensivity = 100f;
         [SerializeField] private Transform characterBody;
