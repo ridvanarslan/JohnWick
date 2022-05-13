@@ -1,4 +1,5 @@
 using System;
+using DefaultNamespace;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -7,7 +8,7 @@ namespace Enemy
     public class EnemyAI : MonoBehaviour
     {
         [SerializeField] private NavMeshAgent agent;
-        [SerializeField] private Transform player;
+        private Transform _player;
 
 
         [SerializeField] float sightRange;
@@ -19,8 +20,17 @@ namespace Enemy
 
         [SerializeField] bool playerInSight, playerInAttackRange;
         [SerializeField] bool enemyAttacked;
+        
+        private EnemyAnimations _enemyAnimations;
 
-        private Collider[] plyr;
+
+        private void Awake()
+        {
+            _player = GameObject.FindWithTag("Player").transform;
+            _enemyAnimations = GetComponent<EnemyAnimations>();
+
+        }
+
         private void Update()
         {
             playerInSight = Physics.CheckSphere(transform.position, sightRange, playerMask);
@@ -28,7 +38,10 @@ namespace Enemy
             
             if (!playerInSight && !playerInAttackRange) SetWalkPosition();
             if (playerInSight && !playerInAttackRange) ChasePlayer();
-            if (playerInSight && playerInAttackRange) AttackPlayer();
+            
+            if (playerInAttackRange)  _enemyAnimations.AttackAnimation(playerInAttackRange);
+            else _enemyAnimations.AttackAnimation(playerInAttackRange);
+
         }
 
         private void SetWalkPosition()
@@ -49,25 +62,29 @@ namespace Enemy
 
         private void AttackPlayer()
         {
-            agent.SetDestination(player.position);
-            transform.LookAt(player);
-
-            if (!enemyAttacked)
+            if (playerInAttackRange)
             {
-                enemyAttacked = true;
-                Invoke(nameof(ResetAttack), attackDelayTime);
+                transform.LookAt(_player);
+                if (!enemyAttacked)
+                {
+                    _player.GetComponent<IDamageble>().TakeDamage(10);
+                    enemyAttacked = true;
+                    Invoke(nameof(ResetAttack), attackDelayTime);
+                }
             }
+            
         }
 
         private void ResetAttack()
         {
+            _enemyAnimations.AttackAnimation(false);
             enemyAttacked = false;
             Debug.Log("Saldýrdi");
         }
 
         private void ChasePlayer()
         {
-            agent.SetDestination(plyr[0].transform.position);
+            agent.SetDestination(_player.transform.position);
         }
 
         private void OnDrawGizmos()

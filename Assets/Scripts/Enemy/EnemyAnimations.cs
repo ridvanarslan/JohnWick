@@ -13,5 +13,6 @@ namespace Enemy
         }
 
         public void DeadAnimation(bool isDead) => _animator.SetBool("__isDead", isDead);
+        public void AttackAnimation(bool isAttack) => _animator.SetBool("__isAttack",isAttack);
     }
 }

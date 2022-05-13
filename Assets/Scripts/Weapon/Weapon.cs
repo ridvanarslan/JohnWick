@@ -1,5 +1,8 @@
 using System;
+using DefaultNamespace;
+using Enemy;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Random = UnityEngine.Random;
 
 namespace Weapon
@@ -7,30 +10,37 @@ namespace Weapon
     public class Weapon : MonoBehaviour
     {
         //Audio
+        [SerializeField] private WeaponSound weaponSound;
         [SerializeField] private AudioClip gunShotClip;
-        [SerializeField] private AudioSource audioSource;
-        [SerializeField] private Vector2 audioPitch;
 
         [SerializeField] private GameObject muzzlePrefab;
         [SerializeField] private GameObject muzzlePosition;
 
         [SerializeField] private bool canFire;
         [SerializeField] private float shotDelay;
+
+        [SerializeField] private short maxMagazineCapacity;
+        [SerializeField] private short currentBulletAmount;
+        [SerializeField] private short totalMagazineCount;
         
-        private float currentTime;
+        private float _currentTime;
 
         public bool CanFire
         {
             get { return canFire; }
             set { canFire = value; }
         }
+
+        public short CurrentBulletAmount => currentBulletAmount;
+
         private void Awake()
         {
-            if (audioSource != null)
-            {
-                audioSource.clip = gunShotClip;
-            }
-            currentTime = 0;
+            _currentTime = 0;
+        }
+
+        private void Start()
+        {
+            LoadMagazine();
         }
 
         private void Update()
@@ -40,37 +50,38 @@ namespace Weapon
                 Debug.Log("weapon");
                 Fire();
             }
+
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                LoadMagazine();
+            }
         }
 
         private void Fire()
         {
-            currentTime = Time.time;
-
+            _currentTime = Time.time;
             var muzzleFlash = Instantiate(muzzlePrefab, muzzlePosition.transform);
-
-            if (audioSource != null)
-            {
-                AudioSource newAudioSource = Instantiate(audioSource, this.transform);
-                if (newAudioSource != null && newAudioSource.outputAudioMixerGroup != null && newAudioSource.outputAudioMixerGroup.audioMixer != null)
-                {
-                    // --- Change pitch to give variation to repeated shots ---
-                    newAudioSource.outputAudioMixerGroup.audioMixer.SetFloat("Pitch",
-                        Random.Range(audioPitch.x, audioPitch.y));
-                    newAudioSource.pitch = Random.Range(audioPitch.x, audioPitch.y);
-
-                    // --- Play the gunshot sound ---
-                    newAudioSource.PlayOneShot(gunShotClip);
-                }
-                Destroy(newAudioSource,1);
-            }
+            weaponSound.PlayFireSound(gunShotClip);
+            currentBulletAmount--;
+            UIManager.Instance.AmmoAmountText($"{currentBulletAmount}/{totalMagazineCount}");
         }
 
         public bool FireDelay()
         {
-            if (currentTime + shotDelay <= Time.time)
+            if (_currentTime + shotDelay <= Time.time)
                 return true;
             else
                 return false;
+        }
+
+        private void LoadMagazine()
+        {
+            if (totalMagazineCount > 0)
+            {
+                currentBulletAmount = maxMagazineCapacity;
+                totalMagazineCount--;
+                UIManager.Instance.AmmoAmountText($"{currentBulletAmount}/{totalMagazineCount}");
+            }
         }
     }
 }
